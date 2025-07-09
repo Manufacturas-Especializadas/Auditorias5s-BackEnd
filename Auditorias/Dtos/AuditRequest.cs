@@ -10,6 +10,8 @@
 
         public int IdForm {  get; set; }
 
+        public IFormFile? Photo { get; set; }
+
         public List<AnswerDTO> Answers { get; set; }
     }
 }
