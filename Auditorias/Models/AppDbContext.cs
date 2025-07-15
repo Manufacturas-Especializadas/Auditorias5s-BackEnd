@@ -27,7 +27,7 @@ public partial class AppDbContext : DbContext
     {
         modelBuilder.Entity<Answers>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Answers__3214EC070C30BB60");
+            entity.HasKey(e => e.Id).HasName("PK__Answers__3214EC070FAE38AF");
 
             entity.Property(e => e.IdAudit).HasColumnName("idAudit");
             entity.Property(e => e.IdQuestion).HasColumnName("idQuestion");
@@ -36,23 +36,26 @@ public partial class AppDbContext : DbContext
             entity.HasOne(d => d.IdAuditNavigation).WithMany(p => p.Answers)
                 .HasForeignKey(d => d.IdAudit)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Answers__idAudit__245D67DE");
+                .HasConstraintName("FK__Answers__idAudit__55009F39");
 
             entity.HasOne(d => d.IdQuestionNavigation).WithMany(p => p.Answers)
                 .HasForeignKey(d => d.IdQuestion)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Answers__idQuest__25518C17");
+                .HasConstraintName("FK__Answers__idQuest__55F4C372");
         });
 
         modelBuilder.Entity<Audits>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Audits__3214EC074B2FB246");
+            entity.HasKey(e => e.Id).HasName("PK__Audits__3214EC07FE043190");
 
             entity.Property(e => e.Area)
                 .IsRequired()
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("area");
+            entity.Property(e => e.AuditType)
+                .HasMaxLength(20)
+                .IsUnicode(false);
             entity.Property(e => e.Date)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime")
@@ -75,12 +78,12 @@ public partial class AppDbContext : DbContext
             entity.HasOne(d => d.IdFormNavigation).WithMany(p => p.Audits)
                 .HasForeignKey(d => d.IdForm)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Audits__photoUrl__208CD6FA");
+                .HasConstraintName("FK__Audits__photoUrl__51300E55");
         });
 
         modelBuilder.Entity<Forms>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Forms__3214EC0748D83631");
+            entity.HasKey(e => e.Id).HasName("PK__Forms__3214EC07A38E8290");
 
             entity.Property(e => e.Name)
                 .IsRequired()
@@ -91,7 +94,7 @@ public partial class AppDbContext : DbContext
 
         modelBuilder.Entity<Questions>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Question__3214EC0795D9ADAC");
+            entity.HasKey(e => e.Id).HasName("PK__Question__3214EC0753465AEF");
 
             entity.Property(e => e.IdSection).HasColumnName("idSection");
             entity.Property(e => e.Text)
@@ -101,12 +104,12 @@ public partial class AppDbContext : DbContext
 
             entity.HasOne(d => d.IdSectionNavigation).WithMany(p => p.Questions)
                 .HasForeignKey(d => d.IdSection)
-                .HasConstraintName("FK__Questions__idSec__1CBC4616");
+                .HasConstraintName("FK__Questions__idSec__4D5F7D71");
         });
 
         modelBuilder.Entity<Sections>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Sections__3214EC07EFB69A09");
+            entity.HasKey(e => e.Id).HasName("PK__Sections__3214EC07F11DED5E");
 
             entity.Property(e => e.IdForm).HasColumnName("idForm");
             entity.Property(e => e.Name)
@@ -116,7 +119,7 @@ public partial class AppDbContext : DbContext
 
             entity.HasOne(d => d.IdFormNavigation).WithMany(p => p.Sections)
                 .HasForeignKey(d => d.IdForm)
-                .HasConstraintName("FK__Sections__idForm__19DFD96B");
+                .HasConstraintName("FK__Sections__idForm__4A8310C6");
         });
 
         OnModelCreatingPartial(modelBuilder);
