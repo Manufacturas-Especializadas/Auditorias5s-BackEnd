@@ -12,6 +12,6 @@
 
         public IFormFile? Photo { get; set; }
 
-        public List<AnswerDTO> Answers { get; set; }
+        public string Answers { get; set; }
     }
 }
