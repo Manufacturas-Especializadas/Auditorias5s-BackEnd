@@ -21,8 +21,6 @@ public partial class Audits
 
     public string PhotoUrl { get; set; }
 
-    public string AuditType { get; set; }
-
     public virtual ICollection<Answers> Answers { get; set; } = new List<Answers>();
 
     public virtual Forms IdFormNavigation { get; set; }
