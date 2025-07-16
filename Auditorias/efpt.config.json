@@ -27,6 +27,18 @@
          "ObjectType": 0
       },
       {
+         "Name": "[dbo].[Offices]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[PeripheralArea]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[ProductionLines]",
+         "ObjectType": 0
+      },
+      {
          "Name": "[dbo].[Questions]",
          "ObjectType": 0
       },
