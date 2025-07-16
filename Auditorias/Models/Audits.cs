@@ -11,11 +11,15 @@ public partial class Audits
 
     public int IdForm { get; set; }
 
+    public int? IdOffices { get; set; }
+
+    public int? IdPeripheralArea { get; set; }
+
+    public int? IdProductionLines { get; set; }
+
     public DateTime? Date { get; set; }
 
     public string Responsible { get; set; }
-
-    public string Area { get; set; }
 
     public string Description { get; set; }
 
@@ -24,4 +28,8 @@ public partial class Audits
     public virtual ICollection<Answers> Answers { get; set; } = new List<Answers>();
 
     public virtual Forms IdFormNavigation { get; set; }
+
+    public virtual PeripheralArea IdPeripheralAreaNavigation { get; set; }
+
+    public virtual ProductionLines IdProductionLinesNavigation { get; set; }
 }
