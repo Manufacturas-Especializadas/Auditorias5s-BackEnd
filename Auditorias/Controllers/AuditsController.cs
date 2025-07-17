@@ -142,22 +142,24 @@ namespace Auditorias.Controllers
                 using var workbook = new XLWorkbook();
                 var worksheet = workbook.Worksheets.Add("Auditorias Detalladas");
                 var summarySheet = workbook.Worksheets.Add("Resumen");
+                const int MaxPhotos = 10;
 
+                // Crear columnas para hoja de detalles
                 string[] headers = { "Auditor", "Fecha", "Área", "Formulario", "Sección", "Pregunta", "Puntuación", "Descripción" };
                 for (int i = 0; i < headers.Length; i++)
                 {
                     worksheet.Cell(1, i + 1).Value = headers[i];
                     worksheet.Cell(1, i + 1).Style.Font.Bold = true;
                 }
-                for (int i = 0; i < 3; i++)
+                for (int i = 0; i < MaxPhotos; i++)
                 {
                     worksheet.Cell(1, headers.Length + i + 1).Value = $"Evidencia {i + 1}";
                     worksheet.Cell(1, headers.Length + i + 1).Style.Font.Bold = true;
                 }
 
+                int row = 2;
                 var httpClient = new HttpClient();
                 var sectionScores = new Dictionary<int, List<decimal>>();
-                int row = 2;
 
                 foreach (var data in auditData)
                 {
@@ -179,19 +181,19 @@ namespace Auditorias.Controllers
                         foreach (var ans in sectionAnswers)
                         {
                             worksheet.Cell(row, 1).Value = audit.Responsible;
-                            worksheet.Cell(row, 2).Value = audit.Date!.Value.ToString("dd/MM/yyyy");
+                            worksheet.Cell(row, 2).Value = audit.Date?.ToString("dd/MM/yyyy");
                             worksheet.Cell(row, 3).Value = data.AreaName;
                             worksheet.Cell(row, 4).Value = data.FormName;
                             worksheet.Cell(row, 5).Value = ans.SectionName;
                             worksheet.Cell(row, 6).Value = ans.QuestionText;
                             worksheet.Cell(row, 7).Value = ans.Score;
                             worksheet.Cell(row, 8).Value = audit.Description;
-                            
+
                             var photoUrls = string.IsNullOrEmpty(audit.PhotoUrl)
                                 ? new List<string>()
                                 : audit.PhotoUrl.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList();
 
-                            for (int i = 0; i < photoUrls.Count && i < 3; i++)
+                            for (int i = 0; i < Math.Min(photoUrls.Count, MaxPhotos); i++)
                             {
                                 try
                                 {
@@ -210,9 +212,7 @@ namespace Auditorias.Controllers
                             }
 
                             if (!photoUrls.Any())
-                            {
                                 worksheet.Cell(row, headers.Length + 1).Value = "Sin evidencia";
-                            }
 
                             row++;
                         }
@@ -227,11 +227,13 @@ namespace Auditorias.Controllers
                     cell.Style.Font.Bold = true;
                     cell.Style.Fill.BackgroundColor = XLColor.LightGray;
                 }
-                for (int i = 0; i < 3; i++)
+                for (int i = 0; i < MaxPhotos; i++)
                 {
-                    summarySheet.Cell(1, summaryHeaders.Length + i + 1).Value = $"Evidencia {i + 1}";
-                    summarySheet.Cell(1, summaryHeaders.Length + i + 1).Style.Font.Bold = true;
-                    summarySheet.Cell(1, summaryHeaders.Length + i + 1).Style.Fill.BackgroundColor = XLColor.LightGray;
+                    var col = summaryHeaders.Length + i + 1;
+                    var cell = summarySheet.Cell(1, col);
+                    cell.Value = $"Evidencia {i + 1}";
+                    cell.Style.Font.Bold = true;
+                    cell.Style.Fill.BackgroundColor = XLColor.LightGray;
                 }
 
                 int summaryRow = 2;
@@ -241,7 +243,7 @@ namespace Auditorias.Controllers
                     var scores = sectionScores.ContainsKey(audit.Id) ? sectionScores[audit.Id] : new List<decimal>();
 
                     summarySheet.Cell(summaryRow, 1).Value = audit.Responsible;
-                    summarySheet.Cell(summaryRow, 2).Value = audit.Date!.Value.ToString("dd/MM/yyyy");
+                    summarySheet.Cell(summaryRow, 2).Value = audit.Date?.ToString("dd/MM/yyyy");
                     summarySheet.Cell(summaryRow, 3).Value = data.AreaName;
                     summarySheet.Cell(summaryRow, 4).Value = data.FormName;
 
@@ -252,10 +254,9 @@ namespace Auditorias.Controllers
                         cell.Style.NumberFormat.Format = "0.00";
                     }
 
-                    decimal totalScore = scores.Sum();
-                    decimal finalScore = totalScore * 0.2m;
-
                     summarySheet.Cell(summaryRow, 10).Value = scores.Count;
+
+                    var finalScore = scores.Sum() * 0.2m;
                     var finalCell = summarySheet.Cell(summaryRow, 11);
                     finalCell.Value = finalScore;
                     finalCell.Style.Font.Bold = true;
@@ -265,7 +266,7 @@ namespace Auditorias.Controllers
                         ? new List<string>()
                         : audit.PhotoUrl.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList();
 
-                    for (int i = 0; i < resumenUrls.Count && i < 3; i++)
+                    for (int i = 0; i < Math.Min(resumenUrls.Count, MaxPhotos); i++)
                     {
                         try
                         {
@@ -279,14 +280,12 @@ namespace Auditorias.Controllers
                         }
                         catch
                         {
-                            summarySheet.Cell(summaryRow, summaryHeaders.Length + 1 + i).Value = "Ver evidencia";
+                            summarySheet.Cell(summaryRow, summaryHeaders.Length + 1 + i).Value = "Error";
                         }
                     }
 
                     if (!resumenUrls.Any())
-                    {
                         summarySheet.Cell(summaryRow, summaryHeaders.Length + 1).Value = "Sin evidencia";
-                    }
 
                     summaryRow++;
                 }
@@ -318,7 +317,14 @@ namespace Auditorias.Controllers
                 return BadRequest(ModelState);
             }
 
-            List<string> photoUrls = new();
+            string? photoUrl = null;
+
+            if (request.Photos != null && request.Photos.Count > 10)
+            {
+                return BadRequest("Se permite un máximo de 10 fotos.");
+            }
+
+            var urls = new List<string>();
 
             if (request.Photos != null && request.Photos.Any())
             {
@@ -326,29 +332,24 @@ namespace Auditorias.Controllers
                 {
                     if (photo.Length > 0)
                     {
-                        try
-                        {
-                            var url = await _azureStorageServices.StoragePhotos(_container, photo);
-                            photoUrls.Add(url);
-                        }
-                        catch (Exception ex)
-                        {
-                            return BadRequest($"Error al subir una imagen: {ex.Message}");
-                        }
+                        var url = await _azureStorageServices.StoragePhotos(_container, photo);
+                        urls.Add(url);
                     }
                 }
+
+                photoUrl = urls.Count > 0 ? string.Join(";", urls) : null;
             }
 
             var audit = new Audits
             {
                 Responsible = request.Responsible,
                 Date = DateTime.Now,
-                Description = request.Description,
+                Description = request.Description ?? "",
                 IdForm = request.IdForm,
                 IdProductionLines = request.IdProductionLines,
                 IdPeripheralArea = request.IdPeripheralArea,
                 IdOffices = request.IdOffices,
-                PhotoUrl = photoUrls.Count > 0 ? string.Join(";", photoUrls) : null
+                PhotoUrl = photoUrl
             };
 
             _context.Audits.Add(audit);
@@ -369,7 +370,5 @@ namespace Auditorias.Controllers
             await _context.SaveChangesAsync();
             return Ok(new { idAudit = audit.Id });
         }
-
-
     }
 }
