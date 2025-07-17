@@ -6,7 +6,7 @@
 
         public int? SelectedAreaId { get; set; }
 
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         public int IdForm {  get; set; }
 
