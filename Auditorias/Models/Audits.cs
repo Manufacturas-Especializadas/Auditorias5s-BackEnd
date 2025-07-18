@@ -17,7 +17,7 @@ public partial class Audits
 
     public int? IdProductionLines { get; set; }
 
-    public DateTime? Date { get; set; }
+    public DateTime Date { get; set; }
 
     public string Responsible { get; set; }
 
