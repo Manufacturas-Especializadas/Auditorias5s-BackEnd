@@ -79,18 +79,27 @@ namespace Auditorias.Controllers
         [Route("GetListAudits")]
         public async Task<IActionResult> GetListAuditsAsync()
         {
-            var list = await _context.Audits
-                            .AsNoTracking()
-                            .OrderByDescending(a => a.Date)
-                            .Take(1)
-                            .ToListAsync();
+            var audits = await _context.Audits
+                    .AsNoTracking()
+                    .ToListAsync();
 
-            if(list == null) 
-            { 
-                return NotFound(); 
-            }
 
-            return Ok(list);
+            var grouped = audits
+                .GroupBy(a => new
+                {
+                    a.Responsible,
+                    Year = a.Date.Year,
+                    Week = System.Globalization.CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(
+                            a.Date,
+                            System.Globalization.CalendarWeekRule.FirstFourDayWeek,
+                            DayOfWeek.Monday
+                        )
+                })
+                .Select(g => g.OrderByDescending(a => a.Date).First())
+                .OrderByDescending(a => a.Date)
+                .ToList();
+
+            return Ok(grouped);
         }
 
         [HttpPost]
@@ -143,8 +152,6 @@ namespace Auditorias.Controllers
                 var worksheet = workbook.Worksheets.Add("Auditorias Detalladas");
                 var summarySheet = workbook.Worksheets.Add("Resumen");
                 const int MaxPhotos = 10;
-
-                // Crear columnas para hoja de detalles
                 string[] headers = { "Auditor", "Fecha", "Área", "Formulario", "Sección", "Pregunta", "Puntuación", "Descripción" };
                 for (int i = 0; i < headers.Length; i++)
                 {
@@ -181,7 +188,7 @@ namespace Auditorias.Controllers
                         foreach (var ans in sectionAnswers)
                         {
                             worksheet.Cell(row, 1).Value = audit.Responsible;
-                            worksheet.Cell(row, 2).Value = audit.Date?.ToString("dd/MM/yyyy");
+                            worksheet.Cell(row, 2).Value = audit.Date.ToString("dd/MM/yyyy");
                             worksheet.Cell(row, 3).Value = data.AreaName;
                             worksheet.Cell(row, 4).Value = data.FormName;
                             worksheet.Cell(row, 5).Value = ans.SectionName;
@@ -243,7 +250,7 @@ namespace Auditorias.Controllers
                     var scores = sectionScores.ContainsKey(audit.Id) ? sectionScores[audit.Id] : new List<decimal>();
 
                     summarySheet.Cell(summaryRow, 1).Value = audit.Responsible;
-                    summarySheet.Cell(summaryRow, 2).Value = audit.Date?.ToString("dd/MM/yyyy");
+                    summarySheet.Cell(summaryRow, 2).Value = audit.Date.ToString("dd/MM/yyyy");
                     summarySheet.Cell(summaryRow, 3).Value = data.AreaName;
                     summarySheet.Cell(summaryRow, 4).Value = data.FormName;
 
