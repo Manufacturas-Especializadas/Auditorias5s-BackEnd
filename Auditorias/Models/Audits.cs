@@ -29,6 +29,8 @@ public partial class Audits
 
     public virtual Forms IdFormNavigation { get; set; }
 
+    public virtual Offices IdOfficesNavigation { get; set; }
+
     public virtual PeripheralArea IdPeripheralAreaNavigation { get; set; }
 
     public virtual ProductionLines IdProductionLinesNavigation { get; set; }
