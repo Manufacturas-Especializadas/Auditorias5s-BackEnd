@@ -39,7 +39,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     
-    
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
@@ -53,4 +52,4 @@ jobs:
           app-name: 'app-mesa-auditorias5s-prod'
           slot-name: 'Production'
           package: .
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_BAC3760C07B74C63BDCBDE58F145B78B }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_FA14E39F5A5A44FA9D7FC4621D1D5BCB }}
