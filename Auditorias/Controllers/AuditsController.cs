@@ -152,7 +152,8 @@ namespace Auditorias.Controllers
                 var worksheet = workbook.Worksheets.Add("Auditorias Detalladas");
                 var summarySheet = workbook.Worksheets.Add("Resumen");
                 const int MaxPhotos = 10;
-                string[] headers = { "Auditor", "Fecha", "Área", "Formulario", "Sección", "Pregunta", "Puntuación", "Descripción" };
+
+                string[] headers = { "Auditor", "Fecha", "Área", "Formulario", "Sección", "Pregunta", "Puntuación (1-5)", "Puntos (x20)", "Descripción" };
                 for (int i = 0; i < headers.Length; i++)
                 {
                     worksheet.Cell(1, i + 1).Value = headers[i];
@@ -166,7 +167,7 @@ namespace Auditorias.Controllers
 
                 int row = 2;
                 var httpClient = new HttpClient();
-                var sectionScores = new Dictionary<int, List<decimal>>();
+                var sectionScores = new Dictionary<int, Dictionary<string, decimal>>();
 
                 foreach (var data in auditData)
                 {
@@ -177,13 +178,14 @@ namespace Auditorias.Controllers
 
                     foreach (var sectionGroup in answersBySection)
                     {
+                        var sectionName = sectionGroup.Key.SectionName;
                         var sectionAnswers = sectionGroup.ToList();
-                        decimal sectionScore = sectionAnswers.Sum(a => a.Score) / sectionAnswers.Count;
-                        decimal weightedScore = sectionScore * 0.2m;
+
+                        decimal sectionScore = sectionAnswers.Sum(a => a.Score * 20) / sectionAnswers.Count;
 
                         if (!sectionScores.ContainsKey(audit.Id))
-                            sectionScores[audit.Id] = new List<decimal>();
-                        sectionScores[audit.Id].Add(weightedScore);
+                            sectionScores[audit.Id] = new Dictionary<string, decimal>();
+                        sectionScores[audit.Id][sectionName] = sectionScore;
 
                         foreach (var ans in sectionAnswers)
                         {
@@ -193,8 +195,9 @@ namespace Auditorias.Controllers
                             worksheet.Cell(row, 4).Value = data.FormName;
                             worksheet.Cell(row, 5).Value = ans.SectionName;
                             worksheet.Cell(row, 6).Value = ans.QuestionText;
-                            worksheet.Cell(row, 7).Value = ans.Score;
-                            worksheet.Cell(row, 8).Value = audit.Description;
+                            worksheet.Cell(row, 7).Value = ans.Score; 
+                            worksheet.Cell(row, 8).Value = ans.Score * 20;
+                            worksheet.Cell(row, 9).Value = audit.Description;
 
                             var photoUrls = string.IsNullOrEmpty(audit.PhotoUrl)
                                 ? new List<string>()
@@ -226,7 +229,7 @@ namespace Auditorias.Controllers
                     }
                 }
 
-                string[] summaryHeaders = { "Auditor", "Fecha", "Área", "Formulario", "1S", "2S", "3S", "4S", "5S", "Total Secciones", "Puntaje Final" };
+                string[] summaryHeaders = { "Auditor", "Fecha", "Área", "Formulario", "Selección", "Orden", "Limpieza", "Estandar", "Sostener", "Puntaje Final" };
                 for (int i = 0; i < summaryHeaders.Length; i++)
                 {
                     var cell = summarySheet.Cell(1, i + 1);
@@ -247,24 +250,38 @@ namespace Auditorias.Controllers
                 foreach (var data in auditData)
                 {
                     var audit = data.Audit;
-                    var scores = sectionScores.ContainsKey(audit.Id) ? sectionScores[audit.Id] : new List<decimal>();
+                    var scores = sectionScores.ContainsKey(audit.Id) ? sectionScores[audit.Id] : new Dictionary<string, decimal>();
+
+                    string[] seccionesOrdenadas = { "Selección", "Orden", "Limpieza", "Estandar", "Sostener" };
 
                     summarySheet.Cell(summaryRow, 1).Value = audit.Responsible;
                     summarySheet.Cell(summaryRow, 2).Value = audit.Date.ToString("dd/MM/yyyy");
                     summarySheet.Cell(summaryRow, 3).Value = data.AreaName;
                     summarySheet.Cell(summaryRow, 4).Value = data.FormName;
 
-                    for (int i = 0; i < 5; i++)
+                    decimal totalScore = 0;
+                    int seccionesContadas = 0;
+
+                    for (int i = 0; i < seccionesOrdenadas.Length; i++)
                     {
-                        var cell = summarySheet.Cell(summaryRow, 5 + i);
-                        cell.Value = i < scores.Count ? scores[i] : 0;
+                        var sectionName = seccionesOrdenadas[i];
+                        var cell = summarySheet.Cell(summaryRow, 5 + i); // 5+ → columnas de secciones
+
+                        if (scores.TryGetValue(sectionName, out decimal sectionScore))
+                        {
+                            cell.Value = sectionScore;
+                            totalScore += sectionScore;
+                            seccionesContadas++;
+                        }
+                        else
+                        {
+                            cell.Value = 0;
+                        }
                         cell.Style.NumberFormat.Format = "0.00";
                     }
 
-                    summarySheet.Cell(summaryRow, 10).Value = scores.Count;
-
-                    var finalScore = scores.Sum() * 0.2m;
-                    var finalCell = summarySheet.Cell(summaryRow, 11);
+                    var finalScore = seccionesContadas > 0 ? totalScore / seccionesContadas : 0;
+                    var finalCell = summarySheet.Cell(summaryRow, 10);
                     finalCell.Value = finalScore;
                     finalCell.Style.Font.Bold = true;
                     finalCell.Style.NumberFormat.Format = "0.00";
