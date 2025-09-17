@@ -229,7 +229,7 @@ namespace Auditorias.Controllers
                     }
                 }
 
-                string[] summaryHeaders = { "Auditor", "Fecha", "Área", "Formulario", "Selección", "Orden", "Limpieza", "Estandar", "Sostener", "Puntaje Final" };
+                string[] summaryHeaders = { "Auditor", "Fecha", "Área", "Formulario", "Seleccionar", "Ordenar", "Limpieza", "Estandarizar", "Sostener", "Puntaje Final" };
                 for (int i = 0; i < summaryHeaders.Length; i++)
                 {
                     var cell = summarySheet.Cell(1, i + 1);
@@ -252,7 +252,7 @@ namespace Auditorias.Controllers
                     var audit = data.Audit;
                     var scores = sectionScores.ContainsKey(audit.Id) ? sectionScores[audit.Id] : new Dictionary<string, decimal>();
 
-                    string[] seccionesOrdenadas = { "Selección", "Orden", "Limpieza", "Estandar", "Sostener" };
+                    string[] seccionesOrdenadas = { "Seleccionar", "Ordenar", "Limpieza", "Estandarizar", "Sostener" };
 
                     summarySheet.Cell(summaryRow, 1).Value = audit.Responsible;
                     summarySheet.Cell(summaryRow, 2).Value = audit.Date.ToString("dd/MM/yyyy");
